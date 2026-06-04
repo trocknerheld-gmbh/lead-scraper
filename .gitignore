@@ -1,0 +1,6 @@
+# Alles ignorieren
+*
+
+# Nur die Deploy-Datei tracken
+!index.html
+!.gitignore

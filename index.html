@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lead Scraper – Neue Unternehmen recherchieren</title>
+  <meta name="description" content="Interaktives Tool zur Lead-Recherche für den deutschen Markt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #1a1d27;
+      --bg-card: rgba(26, 29, 39, 0.7);
+      --bg-glass: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(99, 102, 241, 0.5);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --accent-glow: rgba(99, 102, 241, 0.15);
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.1);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.1);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .app-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 24px;
+      transition: var(--transition);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title .icon {
+      font-size: 20px;
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--border-active);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* User dropdown */
+    .form-select {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      transition: var(--transition);
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+    }
+
+    .form-select:focus {
+      border-color: var(--border-active);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .form-select option {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    /* Branchen Grid */
+    .branchen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 8px;
+    }
+
+    .branche-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .branche-item:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .branche-item.selected {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .branche-item.disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .branche-item input[type="checkbox"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--text-muted);
+      border-radius: 4px;
+      margin-right: 10px;
+      flex-shrink: 0;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .branche-item.selected input[type="checkbox"] {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .branche-item.selected input[type="checkbox"]::after {
+      content: '✓';
+      position: absolute;
+      top: -1px;
+      left: 2px;
+      font-size: 13px;
+      color: white;
+      font-weight: 700;
+    }
+
+    .branche-item label {
+      font-size: 14px;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+
+    .branchen-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .branchen-counter {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: white;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--success), #059669);
+      color: white;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-success:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Loading */
+    .loading-overlay {
+      display: none;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .loading-overlay.active {
+      display: block;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-text {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    .loading-sub {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    /* Results */
+    .results-section {
+      display: none;
+    }
+
+    .results-section.active {
+      display: block;
+      max-width: none;
+      margin-left: -24px;
+      margin-right: -24px;
+      width: calc(100% + 48px);
+    }
+
+    @media (min-width: 1148px) {
+      .results-section.active {
+        margin-left: calc(-50vw + 550px);
+        margin-right: calc(-50vw + 550px);
+        width: auto;
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+    }
+
+    .results-summary {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .stat-badge.new {
+      background: var(--success-bg);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .stat-badge.dup {
+      background: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .stat-badge.total {
+      background: var(--accent-glow);
+      color: var(--accent-hover);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .stat-number {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    /* Results Table */
+    .results-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .results-table th {
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      background: var(--bg-glass);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .results-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .results-table td.col-name {
+      max-width: none;
+      white-space: nowrap;
+      overflow: visible;
+      font-weight: 500;
+    }
+
+    .results-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .results-table tr:hover td {
+      background: var(--bg-glass);
+    }
+
+    .badge-new {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .badge-dup {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .link-cell a {
+      color: var(--accent-hover);
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .link-cell a:hover {
+      text-decoration: underline;
+    }
+
+    /* Transfer Section */
+    .transfer-section {
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .transfer-result {
+      display: none;
+      padding: 20px;
+      border-radius: var(--radius-sm);
+      margin-top: 16px;
+    }
+
+    .transfer-result.success {
+      display: block;
+      background: var(--success-bg);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .transfer-result.error {
+      display: block;
+      background: var(--danger-bg);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+
+    /* Search History */
+    .history-section {
+      margin-top: 32px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-date {
+      color: var(--text-muted);
+      font-size: 13px;
+      min-width: 120px;
+    }
+
+    .history-region {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .history-branchen {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .history-stats {
+      margin-left: auto;
+      font-size: 13px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .history-stats .found {
+      color: var(--accent-hover);
+      font-weight: 600;
+    }
+
+    .history-stats .transferred {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* Error message */
+    .error-msg {
+      display: none;
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      background: var(--danger-bg);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    .error-msg.active {
+      display: block;
+    }
+
+    /* Config Panel */
+    .config-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 16px;
+    }
+
+    .config-toggle {
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      transition: var(--transition);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .config-toggle:hover {
+      color: var(--text-secondary);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .config-panel {
+      display: none;
+      padding: 20px;
+      margin-bottom: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .config-panel.active {
+      display: block;
+    }
+
+    .config-panel .form-group {
+      margin-bottom: 12px;
+    }
+
+    .config-panel .form-label {
+      font-size: 12px;
+    }
+
+    .config-panel .form-input {
+      font-size: 13px;
+      padding: 8px 12px;
+    }
+
+    .config-save {
+      margin-top: 12px;
+      padding: 8px 20px;
+      font-size: 13px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+
+    .config-save:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .branchen-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .results-summary {
+        flex-direction: column;
+      }
+
+      .history-item {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .history-stats {
+        margin-left: 0;
+      }
+    }
+
+    /* Fade in animation */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    /* Search Depth Toggle */
+    .depth-btn {
+      flex: 1;
+      padding: 10px 12px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .depth-btn:hover {
+      border-color: var(--border-active);
+      color: var(--text-primary);
+      background: var(--accent-glow);
+    }
+
+    .depth-btn.active {
+      border-color: var(--accent);
+      color: var(--accent-hover);
+      background: var(--accent-glow);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+
+    <!-- Header -->
+    <div class="header">
+      <h1>🔍 Lead Scraper</h1>
+      <p>Neue Unternehmen recherchieren und nach HubSpot übertragen</p>
+    </div>
+
+    <!-- Config -->
+    <div class="config-bar">
+      <button class="config-toggle" onclick="toggleConfig()">⚙️ Einstellungen</button>
+    </div>
+
+    <div class="config-panel" id="configPanel">
+      <div class="form-group">
+        <label class="form-label">n8n Webhook Base-URL</label>
+        <input type="text" class="form-input" id="cfgWebhookUrl"
+          placeholder="https://trocknerheld.app.n8n.cloud/webhook/" value="">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Authorization Token (Wert aus n8n Header Auth Credential)</label>
+        <input type="password" class="form-input" id="cfgApiToken" placeholder="z.B. mein-geheimes-token-123">
+      </div>
+      <button class="config-save" onclick="saveConfig()">💾 Speichern</button>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card" id="searchCard">
+      <div class="card-title"><span class="icon">📋</span> Suchkriterien</div>
+
+      <div class="form-group">
+        <label class="form-label">Region / Stadt / PLZ</label>
+        <input type="text" class="form-input" id="inputRegion" placeholder="z.B. Köln, NRW, 50667, Berlin-Mitte...">
+      </div>
+
+
+      <div class="form-group">
+        <label class="form-label">Branchen <span class="branchen-counter" id="branchenCounter">(0/3
+            gewählt)</span></label>
+        <div class="branchen-grid" id="branchenGrid"></div>
+        <div class="branchen-hint">Maximal 3 Branchen pro Suche auswählen.</div>
+      </div>
+
+      <div class="form-group" style="margin-top: 0.5rem;">
+        <label
+          style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
+          <input type="checkbox" id="chkExcludeDomains" checked
+            style="width: 1.1rem; height: 1.1rem; accent-color: var(--primary); cursor: pointer;">
+          Bekannte HubSpot-Domains von der Suche ausschließen
+        </label>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; padding-left: 1.7rem;">Erhöht die
+          Trefferquote neuer Leads. Deaktivieren für breitere Suche.</div>
+      </div>
+
+      <div class="form-group" style="margin-top: 1rem;">
+        <label class="form-label">Suchmodus</label>
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <button type="button" class="depth-btn active" id="depthQuick" onclick="setSearchMode('quick')">
+            ⚡ Quick <span style="font-size:11px; opacity:0.7; display:block;">1 Runde · ~60s</span>
+          </button>
+          <button type="button" class="depth-btn" id="depthDeep" onclick="setSearchMode('deep')">
+            🔬 Deep Research <span style="font-size:11px; opacity:0.7; display:block;">3 Runden · ~5-10 Min</span>
+          </button>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+          Deep Research: 3 iterative Runden (Discovery → Portal-Suche → Enrichment).
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btnSearch" onclick="startSearch()" disabled>
+        🔍 Suche starten
+      </button>
+
+      <div class="error-msg" id="searchError"></div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">Gemini durchsucht das Web...</div>
+      <div class="loading-sub" id="loadingSub">Dies kann 30–90 Sekunden dauern</div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="resultsSection">
+      <div class="card fade-in">
+        <div class="card-title"><span class="icon">📊</span> Ergebnisse</div>
+
+        <div class="results-summary">
+          <div class="stat-badge total">
+            <span>Gefunden:</span>
+            <span class="stat-number" id="statTotal">0</span>
+          </div>
+          <div class="stat-badge new">
+            <span>Neue Leads:</span>
+            <span class="stat-number" id="statNew">0</span>
+          </div>
+          <div class="stat-badge dup">
+            <span>Duplikate (gefiltert):</span>
+            <span class="stat-number" id="statDup">0</span>
+          </div>
+        </div>
+        <div id="roundStats" style="margin: 12px 0; font-size: 12px; color: var(--text-muted); display: none;">
+          <span id="roundCountsText"></span>
+          <span id="filteredByKnownText" style="margin-left: 12px;"></span>
+        </div>
+        <div id="discoveredSourcesBox" style="margin: 8px 0 16px; padding: 10px 14px; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15); border-radius: 8px; font-size: 12px; display: none;">
+          <strong style="color: var(--accent-hover);">🔍 Entdeckte Quellen:</strong>
+          <span id="discoveredSourcesList"></span>
+        </div>
+
+        <div class="results-table-wrap">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Unternehmen</th>
+                <th>Rechtsform</th>
+                <th>Branche</th>
+                <th>Adresse</th>
+                <th>PLZ</th>
+                <th>Stadt</th>
+                <th>Telefon</th>
+                <th>Telefon 2</th>
+                <th>E-Mail</th>
+                <th>Mitarbeiter</th>
+                <th>Wohneinheiten</th>
+                <th>USt-IdNr</th>
+                <th>Website</th>
+                <th>Quelle</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="transfer-section">
+          <button class="btn btn-success" id="btnTransfer" onclick="transferLeads()">
+            ✅ Alle neuen Leads nach HubSpot übertragen
+          </button>
+          <div class="transfer-result" id="transferResult"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search History -->
+    <div class="card history-section" id="historySection">
+      <div class="card-title"><span class="icon">📋</span> Suchverlauf</div>
+      <div id="historyList">
+        <div style="color: var(--text-muted); font-size: 14px; padding: 12px 0;">
+          Noch keine Suchen durchgeführt.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==================== CONFIGURATION ====================
+    const BRANCHEN = [
+      'Immobilienverwaltung', 'Wohnungsgenossenschaft', 'Facility-Dienstleister',
+      'Bauträger', 'Bauunternehmen', 'Generalunternehmer', 'Sanierungsunternehmen',
+      'Architekturbüro', 'Gutachter', 'Immobilienmakler',
+      'Renovierungsdienstleister', 'Technische Gebäudeausrüstung (TGA)',
+      'Hotel / Hotelkette', 'Pflegeheim / Pflegeheimkette', 'Fitnesskette',
+      'Öffentliche Einrichtung', 'Versicherung', 'Verwaltungsdienstleister',
+      'Investmentfonds', 'Assekuradeure', 'Andere'
+    ];
+
+    const MAX_BRANCHEN = 3;
+
+    // Placeholder HubSpot users – these will be configured via settings or fetched dynamically
+    const HUBSPOT_USERS = [
+      { id: '', name: '— Bitte wählen —' }
+      // Users will be added here or loaded from config
+    ];
+
+    let selectedBranchen = [];
+    let searchResults = null;
+    let searchMode = 'quick';
+    let pollInterval = null;
+    let config = loadConfig();
+
+    // ==================== CONFIG MANAGEMENT ====================
+    function loadConfig() {
+      const defaults = {
+        webhookUrl: 'https://trocknerheld.app.n8n.cloud/webhook',
+        apiToken: 'sk-scraper-7Kx9mPqR2wYjN4vB',
+        hubspotUsers: []
+      };
+      try {
+        const saved = localStorage.getItem('leadScraper_config');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return { ...defaults, ...parsed };
+        }
+        return defaults;
+      } catch { return defaults; }
+    }
+
+    function saveConfig() {
+      config.webhookUrl = document.getElementById('cfgWebhookUrl').value.trim();
+      config.apiToken = document.getElementById('cfgApiToken').value.trim();
+      localStorage.setItem('leadScraper_config', JSON.stringify(config));
+      toggleConfig();
+      showError('Einstellungen gespeichert ✓', false);
+    }
+
+    function toggleConfig() {
+      const panel = document.getElementById('configPanel');
+      panel.classList.toggle('active');
+      if (panel.classList.contains('active')) {
+        document.getElementById('cfgWebhookUrl').value = config.webhookUrl || '';
+        document.getElementById('cfgApiToken').value = config.apiToken || '';
+      }
+    }
+
+    // ==================== INIT ====================
+    function init() {
+      renderBranchen();
+      loadSearchHistory();
+    }
+
+    function renderBranchen() {
+      const grid = document.getElementById('branchenGrid');
+      grid.innerHTML = BRANCHEN.map((b, i) => `
+        <div class="branche-item" id="branche-${i}" onclick="toggleBranche(${i})">
+          <input type="checkbox" id="cb-${i}">
+          <label for="cb-${i}">${b}</label>
+        </div>
+      `).join('');
+    }
+
+
+    // ==================== BRANCHEN SELECTION ====================
+    function toggleBranche(index) {
+      const branche = BRANCHEN[index];
+      const el = document.getElementById(`branche-${index}`);
+
+      if (selectedBranchen.includes(branche)) {
+        selectedBranchen = selectedBranchen.filter(b => b !== branche);
+        el.classList.remove('selected');
+      } else if (selectedBranchen.length < MAX_BRANCHEN) {
+        selectedBranchen.push(branche);
+        el.classList.add('selected');
+      }
+
+      // Update disabled state
+      BRANCHEN.forEach((_, i) => {
+        const item = document.getElementById(`branche-${i}`);
+        if (selectedBranchen.length >= MAX_BRANCHEN && !selectedBranchen.includes(BRANCHEN[i])) {
+          item.classList.add('disabled');
+        } else {
+          item.classList.remove('disabled');
+        }
+      });
+
+      // Update counter
+      document.getElementById('branchenCounter').textContent =
+        `(${selectedBranchen.length}/${MAX_BRANCHEN} gewählt)`;
+
+      validateForm();
+    }
+
+    function validateForm() {
+      const region = document.getElementById('inputRegion').value.trim();
+      const btn = document.getElementById('btnSearch');
+      btn.disabled = !(region && selectedBranchen.length > 0);
+    }
+
+    function setSearchMode(mode) {
+      searchMode = mode;
+      document.querySelectorAll('.depth-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(mode === 'deep' ? 'depthDeep' : 'depthQuick').classList.add('active');
+    }
+
+    // ==================== SEARCH ====================
+    async function startSearch() {
+      const region = document.getElementById('inputRegion').value.trim();
+
+      if (!region || selectedBranchen.length === 0) return;
+
+      if (!config.webhookUrl || !config.apiToken) {
+        showError('Bitte zuerst in den ⚙️ Einstellungen die Webhook-URL und den API-Token konfigurieren.');
+        return;
+      }
+
+      // Show loading
+      document.getElementById('searchCard').style.display = 'none';
+      document.getElementById('loadingOverlay').classList.add('active');
+      document.getElementById('resultsSection').classList.remove('active');
+      hideError();
+      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+
+      const tokenParam = encodeURIComponent(config.apiToken);
+      const searchUrl = config.webhookUrl.replace(/\/$/, '') + '/lead-search-v3?token=' + tokenParam;
+      const statusUrl = config.webhookUrl.replace(/\/$/, '') + '/lead-search-status';
+
+      // Dynamic loading text
+      const modeLabels = {
+        quick: ['⚡ Quick Search – Runde 1/1...', '~60 Sekunden'],
+        deep:  ['🔬 Deep Research – Starte Discovery (1/3)...', '~5-10 Minuten']
+      };
+      document.getElementById('loadingText').textContent = modeLabels[searchMode][0];
+      document.getElementById('loadingSub').textContent = modeLabels[searchMode][1];
+
+      console.log('[Scraper v3] Starting:', searchMode, { region, branchen: selectedBranchen });
+
+      try {
+        // Step 1: Start search (immediate response)
+        const startResp = await fetch(searchUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            region: region,
+            branchen: selectedBranchen,
+            mode: searchMode,
+            excludeKnownDomains: document.getElementById('chkExcludeDomains').checked
+          })
+        });
+
+        if (!startResp.ok) {
+          const errText = await startResp.text().catch(() => '');
+          throw new Error(`HTTP ${startResp.status}: ${errText}`);
+        }
+
+        const startData = await startResp.json();
+        const executionId = startData.executionId;
+        console.log('[Scraper v3] Execution started:', executionId);
+
+        if (!executionId) throw new Error('Keine executionId erhalten');
+
+        // Step 2: Poll for results
+        let pollCount = 0;
+        const maxPolls = 180; // 15 min at 5s intervals
+        const deepProgressTexts = [
+          { after: 0, text: '🔬 Deep Research – Discovery (1/3)...' },
+          { after: 12, text: '🔬 Deep Research – Portal-Suche (2/3)...' },
+          { after: 30, text: '🔬 Deep Research – Enrichment (3/3)...' },
+          { after: 50, text: '🔬 Deep Research – HubSpot Abgleich...' },
+          { after: 60, text: '🔬 Deep Research – Ergebnisse werden geschrieben...' }
+        ];
+
+        pollInterval = setInterval(async () => {
+          pollCount++;
+          if (pollCount > maxPolls) {
+            clearInterval(pollInterval); pollInterval = null;
+            document.getElementById('loadingOverlay').classList.remove('active');
+            document.getElementById('searchCard').style.display = 'block';
+            showError('Suche abgebrochen: Zeitüberschreitung (15 Min).');
+            return;
+          }
+
+          // Update progress text for Deep mode
+          if (searchMode === 'deep') {
+            for (let i = deepProgressTexts.length - 1; i >= 0; i--) {
+              if (pollCount >= deepProgressTexts[i].after) {
+                document.getElementById('loadingText').textContent = deepProgressTexts[i].text;
+                break;
+              }
+            }
+            document.getElementById('loadingSub').textContent = `${pollCount * 5}s vergangen...`;
+          }
+
+          try {
+            const statusResp = await fetch(
+              statusUrl + '?executionId=' + encodeURIComponent(executionId) + '&token=' + tokenParam
+            );
+            if (!statusResp.ok) return; // Retry next poll
+
+            const statusData = await statusResp.json();
+            console.log('[Scraper v3] Poll', pollCount, ':', statusData.status);
+
+            if (statusData.status === 'done') {
+              clearInterval(pollInterval); pollInterval = null;
+              document.getElementById('loadingOverlay').classList.remove('active');
+              console.log('[Scraper v3] Results:', statusData);
+              searchResults = statusData;
+              renderResults(statusData);
+            }
+          } catch (pollErr) {
+            console.warn('[Scraper v3] Poll error (retrying):', pollErr.message);
+          }
+        }, 5000);
+
+      } catch (err) {
+        console.error('[Scraper v3] Error:', err);
+        document.getElementById('searchCard').style.display = 'block';
+        document.getElementById('loadingOverlay').classList.remove('active');
+        showError(`Fehler bei der Suche: ${err.message}`);
+      }
+    }
+
+    // ==================== RESULTS ====================
+    function renderResults(data) {
+      const leads = data.leads || [];
+      const newLeads = leads.filter(l => !l.isDuplicate && !l.dedupFailed);
+      const dupLeads = leads.filter(l => l.isDuplicate && !l.dedupFailed);
+      const failedLeads = leads.filter(l => l.dedupFailed);
+
+      // Stats
+      document.getElementById('statTotal').textContent = leads.length;
+      document.getElementById('statNew').textContent = newLeads.length;
+      document.getElementById('statDup').textContent = dupLeads.length + (failedLeads.length > 0 ? ` (${failedLeads.length} ⚠️)` : '');
+
+      // Round counts (v2)
+      const meta = data.meta || {};
+      const rc = meta.roundCounts;
+      if (rc) {
+        const parts = [`R1: ${rc.r1 || 0}`];
+        if (rc.r2) parts.push(`R2: ${rc.r2}`);
+        if (rc.r3) parts.push(`R3: ${rc.r3}`);
+        document.getElementById('roundCountsText').textContent = `📊 ${parts.join(' · ')} (Roh: ${meta.totalRaw || 0})`;
+        if (meta.filteredByKnown > 0) {
+          document.getElementById('filteredByKnownText').textContent = `🛡️ ${meta.filteredByKnown} bekannte Domains gefiltert`;
+        } else {
+          document.getElementById('filteredByKnownText').textContent = '';
+        }
+        document.getElementById('roundStats').style.display = 'block';
+      } else {
+        document.getElementById('roundStats').style.display = 'none';
+      }
+
+      // Discovered sources (v2)
+      const sources = data.allDiscoveredSources || [];
+      if (sources.length > 0) {
+        document.getElementById('discoveredSourcesList').innerHTML = sources.map(s =>
+          ` <a href="${s.url.startsWith('http') ? s.url : 'https://' + s.url}" target="_blank" style="color: var(--accent-hover); text-decoration: none;">${s.name || s.url}</a>`
+        ).join(' · ');
+        document.getElementById('discoveredSourcesBox').style.display = 'block';
+      } else {
+        document.getElementById('discoveredSourcesBox').style.display = 'none';
+      }
+
+      // Table - show new leads first, then failed, then duplicates
+      const sorted = [...newLeads, ...failedLeads, ...dupLeads];
+      const tbody = document.getElementById('resultsBody');
+      tbody.innerHTML = sorted.map(lead => `
+        <tr style="${lead.isDuplicate ? 'opacity: 0.5;' : ''}${lead.dedupFailed ? 'background: rgba(255,193,7,0.1);' : ''}">
+          <td>${lead.dedupFailed
+          ? '<span class="badge-dup" style="background:rgba(255,193,7,0.2);color:#ffc107;">⚠️ Prüfung fehlgeschlagen</span>'
+          : (lead.isDuplicate
+            ? '<span class="badge-dup">Duplikat</span>'
+            : '<span class="badge-new">Neu</span>')
+        }</td>
+          <td class="col-name" title="${esc(lead.name || '')}">${esc(lead.name || '—')}</td>
+          <td>${esc(lead.rechtsform || '—')}</td>
+          <td>${esc(lead.unternehmensart || '—')}</td>
+          <td>${esc(lead.address || '—')}</td>
+          <td>${esc(lead.zip || '—')}</td>
+          <td>${esc(lead.city || '—')}</td>
+          <td>${esc(lead.phone || '—')}</td>
+          <td>${esc(lead.telefonnummer_2 || '—')}</td>
+          <td class="link-cell">${lead.e_mail_adresse
+          ? `<a href="mailto:${esc(lead.e_mail_adresse)}">${esc(lead.e_mail_adresse)}</a>`
+          : '—'
+        }</td>
+          <td>${esc(lead.numberofemployees || '—')}</td>
+          <td>${esc(lead.anzahl_verwalteter_wohneinheiten || '—')}</td>
+          <td>${esc(lead.ustidnr || '—')}</td>
+          <td class="link-cell">${lead.website
+          ? `<a href="${esc(lead.website)}" target="_blank" rel="noopener">${esc(lead.domain || lead.website)}</a>`
+          : '—'
+        }</td>
+          <td class="link-cell">${lead.source_url
+          ? `<a href="${esc(lead.source_url)}" target="_blank" rel="noopener">🔗</a>`
+          : '—'
+        }</td>
+        </tr>
+      `).join('');
+
+      // Transfer button
+      const btnTransfer = document.getElementById('btnTransfer');
+      if (newLeads.length > 0) {
+        btnTransfer.textContent = `✅ Alle ${newLeads.length} neuen Leads nach HubSpot übertragen`;
+        btnTransfer.disabled = false;
+      } else {
+        btnTransfer.textContent = 'Keine neuen Leads zum Übertragen';
+        btnTransfer.disabled = true;
+      }
+
+      // Reset transfer result
+      document.getElementById('transferResult').className = 'transfer-result';
+      document.getElementById('transferResult').style.display = 'none';
+
+      // Show results
+      document.getElementById('resultsSection').classList.add('active');
+
+      // Show search card again (for new search)
+      document.getElementById('searchCard').style.display = 'block';
+    }
+
+    // ==================== TRANSFER ====================
+    async function transferLeads() {
+      if (!searchResults || !searchResults.leads) return;
+
+      const newLeads = searchResults.leads.filter(l => !l.isDuplicate);
+      if (newLeads.length === 0) return;
+
+
+      const btn = document.getElementById('btnTransfer');
+      btn.disabled = true;
+      btn.textContent = '⏳ Übertrage...';
+
+      try {
+        const tokenParam = encodeURIComponent(config.apiToken);
+        const webhookUrl = config.webhookUrl.replace(/\/$/, '') + '/lead-transfer?token=' + tokenParam;
+
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          body: JSON.stringify({
+            leads: newLeads,
+            searchMeta: {
+              region: document.getElementById('inputRegion').value.trim(),
+              branchen: selectedBranchen
+            }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        const resultEl = document.getElementById('transferResult');
+        resultEl.className = 'transfer-result success';
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = `
+          ✅ <strong>${result.created || newLeads.length} Unternehmen</strong> erfolgreich nach HubSpot übertragen!
+          ${result.errors ? `<br>⚠️ ${result.errors} Fehler aufgetreten.` : ''}
+        `;
+
+        btn.textContent = '✅ Übertragen!';
+
+        // Update search history
+        addToHistory({
+          date: new Date().toISOString(),
+          region: document.getElementById('inputRegion').value.trim(),
+          branchen: selectedBranchen,
+          found: searchResults.leads.length,
+          transferred: result.created || newLeads.length
+        });
+
+      } catch (err) {
+        const resultEl = document.getElementById('transferResult');
+        resultEl.className = 'transfer-result error';
+        resultEl.style.display = 'block';
+        resultEl.textContent = `❌ Fehler beim Übertragen: ${err.message}`;
+        btn.disabled = false;
+        btn.textContent = `✅ Erneut versuchen (${newLeads.length} Leads)`;
+      }
+    }
+
+    // ==================== SEARCH HISTORY ====================
+    function loadSearchHistory() {
+      try {
+        const history = JSON.parse(localStorage.getItem('leadScraper_history') || '[]');
+        renderHistory(history);
+      } catch { renderHistory([]); }
+    }
+
+    function addToHistory(entry) {
+      try {
+        const history = JSON.parse(localStorage.getItem('leadScraper_history') || '[]');
+        history.unshift(entry);
+        if (history.length > 50) history.length = 50;
+        localStorage.setItem('leadScraper_history', JSON.stringify(history));
+        renderHistory(history);
+      } catch { /* ignore */ }
+    }
+
+    function renderHistory(history) {
+      const list = document.getElementById('historyList');
+      if (history.length === 0) {
+        list.innerHTML = '<div style="color: var(--text-muted); font-size: 14px; padding: 12px 0;">Noch keine Suchen durchgeführt.</div>';
+        return;
+      }
+
+      list.innerHTML = history.slice(0, 20).map(h => {
+        const d = new Date(h.date);
+        const dateStr = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+          + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        return `
+          <div class="history-item">
+            <span class="history-date">${dateStr}</span>
+            <span class="history-region">${esc(h.region)}</span>
+            <span class="history-branchen">${esc((h.branchen || []).join(', '))}</span>
+            <span class="history-stats">
+              <span class="found">${h.found}</span> gefunden,
+              <span class="transferred">${h.transferred}</span> übertragen
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==================== UTILS ====================
+    function showError(msg, isError = true) {
+      const el = document.getElementById('searchError');
+      el.textContent = msg;
+      el.classList.add('active');
+      if (!isError) {
+        el.style.background = 'var(--success-bg)';
+        el.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+        el.style.color = 'var(--success)';
+        setTimeout(() => el.classList.remove('active'), 3000);
+      } else {
+        el.style.background = '';
+        el.style.borderColor = '';
+        el.style.color = '';
+      }
+    }
+
+    function hideError() {
+      document.getElementById('searchError').classList.remove('active');
+    }
+
+    function esc(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Event listeners
+    document.getElementById('inputRegion').addEventListener('input', validateForm);
+
+    // Init
+    init();
+  </script>
+</body>
+
+</html>
