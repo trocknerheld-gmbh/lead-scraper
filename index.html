@@ -859,6 +859,50 @@
 
   </div>
 
+  <!-- Password Gate -->
+  <div id="authGate" style="position:fixed;inset:0;background:var(--bg-primary);z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="text-align:center;max-width:360px;padding:32px;">
+      <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+      <h2 style="font-size:20px;font-weight:600;margin-bottom:8px;">Lead Scraper</h2>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">Bitte Passwort eingeben</p>
+      <input type="password" id="authPassword" placeholder="Passwort"
+        style="width:100%;padding:12px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:15px;outline:none;margin-bottom:12px;"
+        onkeydown="if(event.key==='Enter')checkAuth()">
+      <button onclick="checkAuth()"
+        style="width:100%;padding:12px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:white;font-size:15px;font-weight:600;cursor:pointer;">
+        Anmelden
+      </button>
+      <div id="authError" style="color:var(--danger);font-size:13px;margin-top:12px;display:none;">Falsches Passwort</div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== AUTH GATE ====================
+    const AUTH_HASH = '7ff057c8e04d5813a50770e7a1838056618e465ae7d5fba416bf04b3a1bf6466';
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    async function checkAuth() {
+      const pw = document.getElementById('authPassword').value;
+      const hash = await sha256(pw);
+      if (hash === AUTH_HASH) {
+        sessionStorage.setItem('leadScraper_auth', 'ok');
+        document.getElementById('authGate').style.display = 'none';
+      } else {
+        document.getElementById('authError').style.display = 'block';
+        document.getElementById('authPassword').value = '';
+        document.getElementById('authPassword').focus();
+      }
+    }
+    // Auto-unlock if already authenticated this session
+    if (sessionStorage.getItem('leadScraper_auth') === 'ok') {
+      document.getElementById('authGate').style.display = 'none';
+    } else {
+      setTimeout(() => document.getElementById('authPassword').focus(), 100);
+    }
+  </script>
+
   <script>
     // ==================== CONFIGURATION ====================
     const BRANCHEN = [
