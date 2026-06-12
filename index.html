@@ -835,9 +835,14 @@
         </div>
 
         <div class="transfer-section">
-          <button class="btn btn-success" id="btnTransfer" onclick="transferLeads()">
-            ✅ Alle neuen Leads nach HubSpot übertragen
-          </button>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn" id="btnVerify" onclick="startVerification()" style="display:none; background: linear-gradient(135deg, #6366f1, #818cf8); color: white; border: none;">
+              🔬 Neue Leads verifizieren
+            </button>
+            <button class="btn btn-success" id="btnTransfer" onclick="transferLeads()">
+              ✅ Alle neuen Leads nach HubSpot übertragen
+            </button>
+          </div>
           <div class="transfer-result" id="transferResult"></div>
         </div>
       </div>
@@ -1174,6 +1179,17 @@
         btnTransfer.disabled = true;
       }
 
+      // Verify button: show only if search was done without verification & there are new leads
+      const btnVerify = document.getElementById('btnVerify');
+      const wasVerified = data.meta?.verify === true || data.meta?.action === 'verify';
+      if (newLeads.length > 0 && !wasVerified) {
+        btnVerify.style.display = 'inline-flex';
+        btnVerify.textContent = `🔬 ${newLeads.length} neue Leads verifizieren`;
+        btnVerify.disabled = false;
+      } else {
+        btnVerify.style.display = 'none';
+      }
+
       // Reset transfer result
       document.getElementById('transferResult').className = 'transfer-result';
       document.getElementById('transferResult').style.display = 'none';
@@ -1183,6 +1199,96 @@
 
       // Show search card again (for new search)
       document.getElementById('searchCard').style.display = 'block';
+    }
+
+    // ==================== VERIFICATION ====================
+    async function startVerification() {
+      if (!searchResults || !searchResults.leads) return;
+      const newLeads = searchResults.leads.filter(l => !l.isDuplicate);
+      if (newLeads.length === 0) return;
+
+      if (!config.webhookUrl || !config.apiToken) {
+        showError('Bitte zuerst Webhook-URL und API-Token konfigurieren.');
+        return;
+      }
+
+      const btnVerify = document.getElementById('btnVerify');
+      btnVerify.disabled = true;
+      btnVerify.textContent = '🔬 Verifizierung wird gestartet...';
+
+      const tokenParam = encodeURIComponent(config.apiToken);
+      const verifyUrl = config.webhookUrl.replace(/\/$/, '') + '/lead-verify-v4?token=' + tokenParam;
+      const statusUrl = config.webhookUrl.replace(/\/$/, '') + '/lead-search-status';
+
+      console.log('[Scraper v4] Starting verification for', newLeads.length, 'leads');
+
+      try {
+        const resp = await fetch(verifyUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ leads: newLeads })
+        });
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const startData = await resp.json();
+        const executionId = startData.executionId;
+        if (!executionId) throw new Error('Keine executionId erhalten');
+
+        console.log('[Scraper v4] Verify execution:', executionId);
+        btnVerify.textContent = `🔬 Verifizierung läuft (0s)... (${newLeads.length} Leads)`;
+
+        // Poll for results
+        let pollCount = 0;
+        const maxPolls = 120; // 10 min
+        const verifyPoll = setInterval(async () => {
+          pollCount++;
+          btnVerify.textContent = `🔬 Verifizierung läuft (${pollCount * 5}s)... (${newLeads.length} Leads)`;
+
+          if (pollCount > maxPolls) {
+            clearInterval(verifyPoll);
+            btnVerify.textContent = '❌ Timeout – Verifizierung abgebrochen';
+            btnVerify.disabled = false;
+            return;
+          }
+
+          try {
+            const statusResp = await fetch(
+              statusUrl + '?executionId=' + encodeURIComponent(executionId) + '&token=' + tokenParam
+            );
+            if (!statusResp.ok) return;
+            const statusData = await statusResp.json();
+
+            if (statusData.status === 'done' && statusData.data) {
+              clearInterval(verifyPoll);
+              // Merge verified data back
+              const verifiedData = typeof statusData.data === 'string' ? JSON.parse(statusData.data) : statusData.data;
+              const verifiedLeads = verifiedData.leads || [];
+              // Replace new leads with enriched versions
+              const dupLeads = searchResults.leads.filter(l => l.isDuplicate);
+              searchResults = { ...searchResults, leads: [...verifiedLeads, ...dupLeads], meta: { ...searchResults.meta, verify: true, enrichedCount: verifiedData.meta?.enrichedCount || 0 } };
+              renderResults(searchResults);
+              btnVerify.style.display = 'none';
+              const enriched = verifiedData.meta?.enrichedCount || 0;
+              showTransferResult(`✅ Verifizierung abgeschlossen: ${enriched} von ${verifiedLeads.length} Leads erfolgreich angereichert.`, 'success');
+            }
+          } catch (e) {
+            console.error('[Verify poll error]', e);
+          }
+        }, 5000);
+
+      } catch (err) {
+        console.error('[Verify error]', err);
+        btnVerify.textContent = '🔬 Neue Leads verifizieren';
+        btnVerify.disabled = false;
+        showError(`Fehler bei Verifizierung: ${err.message}`);
+      }
+    }
+
+    function showTransferResult(msg, type) {
+      const el = document.getElementById('transferResult');
+      el.textContent = msg;
+      el.className = 'transfer-result ' + type;
+      el.style.display = 'block';
     }
 
     // ==================== TRANSFER ====================
